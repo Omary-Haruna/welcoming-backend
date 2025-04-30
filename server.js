@@ -9,35 +9,38 @@ const mongoose = require('mongoose');
 // Create Express app
 const app = express();
 
-// Middleware
-app.use(cors()); // Allow frontend to access backend
-app.use(express.json()); // Parse incoming JSON
+// Middlewares
+app.use(cors());
+app.use(express.json());
 
-// Routes
+// Import route files
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const salesRoutes = require('./routes/sales');
 
-app.use('/api/auth', authRoutes);       // /api/auth/register, /api/auth/login
+// Use routes
+app.use('/api/auth', authRoutes);        // /api/auth/register, /api/auth/login
 app.use('/api/products', productRoutes); // /api/products/all
 app.use('/api/sales', salesRoutes);      // /api/sales/add, /api/sales/all
 
-// MongoDB Connection
-mongoose
-    .connect(process.env.MONGO_URI)
+// Root route to test API
+app.get('/', (req, res) => {
+    res.send('✅ API is working!');
+});
+
+// Connect to MongoDB and start server
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
     .then(() => {
         console.log('🟢 MongoDB Connected');
 
         const PORT = process.env.PORT || 4000;
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Server is running on http://localhost:${PORT}`);
+            console.log(`🚀 Server running at http://localhost:${PORT}`);
         });
     })
     .catch((err) => {
-        console.error('❌ MongoDB Connection Error:', err.message);
+        console.error('❌ MongoDB connection error:', err.message);
     });
-
-// Optional: Test route
-app.get('/', (req, res) => {
-    res.send('✅ API is working!');
-});
