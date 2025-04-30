@@ -25,4 +25,18 @@ router.get('/all', async (req, res) => {
     }
 });
 
+// DELETE /api/sales/:id
+// routes/sales.js
+router.delete('/:id', async (req, res) => {
+    try {
+        const result = await Sale.findByIdAndDelete(req.params.id);
+        if (!result) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Delete failed' });
+    }
+});
+
+
+
 module.exports = router;
