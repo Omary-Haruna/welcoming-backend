@@ -57,26 +57,36 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
-// ✅ NEW: Reduce product quantity after sale
+// ✅ Safe: Reduce product quantity after sale (prevents duplicate reduction)
 router.post('/reduce-quantity', async (req, res) => {
     const { items } = req.body;
 
     try {
-        for (const item of items) {
-            const { productId, quantitySold } = item;
+        // 🛡️ Merge duplicate product IDs
+        const mergedItems = {};
 
+        for (const item of items) {
+            if (!mergedItems[item.productId]) {
+                mergedItems[item.productId] = 0;
+            }
+            mergedItems[item.productId] += item.quantitySold;
+        }
+
+        // 🔁 Reduce quantity safely once per product
+        for (const [productId, totalQty] of Object.entries(mergedItems)) {
             const product = await Product.findById(productId);
             if (!product) {
                 console.warn(`Product not found: ${productId}`);
                 continue;
             }
 
-            product.quantity = Math.max(product.quantity - quantitySold, 0);
+            console.log(`🛒 Reducing ${totalQty} from ${product.name} (${productId})`);
+            product.quantity = Math.max(product.quantity - totalQty, 0);
             product.dateModified = new Date();
             await product.save();
         }
 
-        res.status(200).json({ success: true, message: 'Product quantities updated' });
+        res.status(200).json({ success: true, message: 'Product quantities updated safely' });
     } catch (error) {
         console.error('Error reducing quantities:', error);
         res.status(500).json({ success: false, message: 'Server error reducing quantities' });
