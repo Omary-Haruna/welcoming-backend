@@ -6,26 +6,26 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-// Create Express app
+// Initialize Express app
 const app = express();
 
-// Middleware
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Import route files
+// Route files
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const salesRoutes = require('./routes/sales');
-const pendingCartRoutes = require('./routes/pending-cart'); // ✅ ADD THIS LINE
+const pendingCartRoutes = require('./routes/pending-cart'); // ✅ pending cart route
 
-// Use routes
-app.use('/api/auth', authRoutes);           // /api/auth/register, /api/auth/login
-app.use('/api/products', productRoutes);    // /api/products/all
-app.use('/api/sales', salesRoutes);         // /api/sales/add, /api/sales/all
-app.use('/api/pending-cart', pendingCartRoutes); // ✅ ADD THIS LINE
+// Register routes
+app.use('/api/auth', authRoutes);               // /api/auth/register, /api/auth/login
+app.use('/api/products', productRoutes);        // /api/products/all
+app.use('/api/sales', salesRoutes);             // /api/sales/add, /api/sales/all
+app.use('/api/pending-cart', pendingCartRoutes); // ✅ pending-cart/save, /all, /clear
 
-// Root route to test API
+// Root test route
 app.get('/', (req, res) => {
     res.send('✅ API is working!');
 });
@@ -40,7 +40,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
         const PORT = process.env.PORT || 4000;
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Server running at http://localhost:${PORT}`);
+            console.log(`🚀 Server running on http://localhost:${PORT}`);
         });
     })
     .catch((err) => {
