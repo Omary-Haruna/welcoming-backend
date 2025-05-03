@@ -11,32 +11,34 @@ const isStrongPassword = (password) =>
 
 /* ---------- REGISTER ---------- */
 router.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    let { name, email, password } = req.body;
+
+    // 🧼 Clean email
+    email = email.toLowerCase();
 
     // 🔒 Input validation
     if (!name || name.length < 3) {
-        return res.status(400).json({ error: 'Name must be at least 3 characters long' });
+        return res.status(400).json({ error: 'Name must be at least 3 characters.' });
     }
 
     if (!isValidEmail(email)) {
-        return res.status(400).json({ error: 'Invalid email format' });
+        return res.status(400).json({ error: 'Invalid email address.' });
     }
 
     if (!isStrongPassword(password)) {
         return res.status(400).json({
-            error:
-                'Password must be at least 6 characters and include uppercase, lowercase, and a number',
+            error: 'Password must be at least 6 characters and include uppercase, lowercase, and a number.',
         });
     }
 
     try {
-        // ❌ Check for existing user
+        // 🔍 Check if email already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ error: 'Email is already registered' });
+            return res.status(400).json({ error: 'Email already exists' }); // 🔁 MATCH FRONTEND
         }
 
-        // ✅ Determine role and status
+        // 🥇 First user becomes admin & active
         const isFirstUser = (await User.countDocuments()) === 0;
         const role = isFirstUser ? 'admin' : 'user';
         const status = isFirstUser ? 'active' : 'pending';
@@ -45,13 +47,14 @@ router.post('/register', async (req, res) => {
 
         return res.status(201).json({
             message: 'User registered successfully',
-            status: user.status,
+            status: user.status, // ⬅️ frontend uses this to check if "pending"
         });
     } catch (err) {
         console.error('Register error:', err.message);
         return res.status(500).json({ error: 'Server error during registration' });
     }
 });
+
 
 /* ---------- LOGIN ---------- */
 router.post('/login', async (req, res) => {
