@@ -18,12 +18,17 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const salesRoutes = require('./routes/sales');
 const pendingCartRoutes = require('./routes/pending-cart'); // ✅ pending cart route
+const adminRoutes = require('./routes/admin'); // ✅ NEW
+
+
 
 // Register routes
 app.use('/api/auth', authRoutes);               // /api/auth/register, /api/auth/login
 app.use('/api/products', productRoutes);        // /api/products/all
 app.use('/api/sales', salesRoutes);             // /api/sales/add, /api/sales/all
 app.use('/api/pending-cart', pendingCartRoutes); // ✅ pending-cart/save, /all, /clear
+app.use('/api/admin', adminRoutes);
+
 
 // Root test route
 app.get('/', (req, res) => {
@@ -31,12 +36,13 @@ app.get('/', (req, res) => {
 });
 
 // Connect to MongoDB and start server
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => {
+mongoose.connect(process.env.MONGO_URI)
+
+    .then((connection) => {
+        const dbName = connection.connections[0].name;  // 👈 This line checks the database name
         console.log('🟢 MongoDB Connected');
+        console.log('🧠 Your system is using this database:', dbName);  // 👈 This line prints the database name
+
 
         const PORT = process.env.PORT || 4000;
         app.listen(PORT, '0.0.0.0', () => {
