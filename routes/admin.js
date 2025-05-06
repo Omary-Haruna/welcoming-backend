@@ -37,7 +37,7 @@ router.delete('/disapprove/:id', protect, restrictToAdmin, async (req, res) => {
 // 📄 Get all users with status = 'pending'
 router.get('/pending-users', protect, restrictToAdmin, async (req, res) => {
     try {
-        const users = await User.find({ status: 'pending' }).select('name email _id');
+        const users = await User.find({ status: 'pending' }).select('name email _id status');
         res.json({ users });
     } catch (err) {
         console.error('Pending users error:', err);
@@ -48,7 +48,7 @@ router.get('/pending-users', protect, restrictToAdmin, async (req, res) => {
 // 📄 Get all approved users (status = 'active')
 router.get('/approved-users', protect, restrictToAdmin, async (req, res) => {
     try {
-        const users = await User.find({ status: 'active' }).select('name email _id permissions');
+        const users = await User.find({ status: 'active' }).select('name email _id permissions status');
         res.json({ users });
     } catch (err) {
         console.error('Approved users error:', err);
