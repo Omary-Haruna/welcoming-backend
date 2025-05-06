@@ -66,15 +66,20 @@ router.put('/edit-permissions/:id', protect, restrictToAdmin, async (req, res) =
 });
 
 // ✅ Get all users with status = 'active'
+// ✅ Get all users with status = 'active' and role !== 'admin'
 router.get('/approved-users', protect, restrictToAdmin, async (req, res) => {
     try {
-        const users = await User.find({ status: 'active' }).select('name email _id permissions');
+        const users = await User.find({
+            status: 'active',
+            role: { $ne: 'admin' } // exclude admin users
+        }).select('name email _id permissions');
         res.json({ users });
     } catch (err) {
         console.error('Approved users error:', err);
         res.status(500).json({ error: 'Server error loading approved users' });
     }
 });
+
 
 
 module.exports = router;
