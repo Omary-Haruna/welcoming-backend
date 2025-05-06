@@ -45,17 +45,6 @@ router.get('/pending-users', protect, restrictToAdmin, async (req, res) => {
     }
 });
 
-// 📄 Get all approved users (status = 'active')
-router.get('/approved-users', protect, restrictToAdmin, async (req, res) => {
-    try {
-        const users = await User.find({ status: 'active' }).select('name email _id permissions status');
-        res.json({ users });
-    } catch (err) {
-        console.error('Approved users error:', err);
-        res.status(500).json({ error: 'Server error loading approved users' });
-    }
-});
-
 // 🛠️ Edit permissions for an approved user
 router.put('/edit-permissions/:id', protect, restrictToAdmin, async (req, res) => {
     try {
