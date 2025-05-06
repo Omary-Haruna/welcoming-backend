@@ -2,7 +2,7 @@ const router = require('express').Router();
 const User = require('../models/User');
 const { protect, restrictToAdmin } = require('../middleware/auth');
 
-// ✅ Admin approves a user by ID
+// ✅ Approve user by ID and assign permissions
 router.put('/approve/:id', protect, restrictToAdmin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -20,7 +20,22 @@ router.put('/approve/:id', protect, restrictToAdmin, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
-router.get('/pending-users', async (req, res) => {
+
+// ❌ Disapprove (delete) user by ID
+router.delete('/disapprove/:id', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        res.json({ message: 'User disapproved and removed.' });
+    } catch (err) {
+        console.error('Disapprove error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 📄 Get all users with status = 'pending'
+router.get('/pending-users', protect, restrictToAdmin, async (req, res) => {
     try {
         const users = await User.find({ status: 'pending' }).select('name email _id');
         res.json({ users });
@@ -29,20 +44,36 @@ router.get('/pending-users', async (req, res) => {
         res.status(500).json({ error: 'Server error loading users' });
     }
 });
-// ❌ Disapprove (Delete) user
-router.delete('/disapprove/:id', protect, restrictToAdmin, async (req, res) => {
+
+// 📄 Get all approved users (status = 'active')
+router.get('/approved-users', protect, restrictToAdmin, async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json({ message: 'User disapproved and removed.' });
+        const users = await User.find({ status: 'active' }).select('name email _id permissions');
+        res.json({ users });
     } catch (err) {
-        console.error('Disapprove error:', err);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Approved users error:', err);
+        res.status(500).json({ error: 'Server error loading approved users' });
     }
 });
 
+// 🛠️ Edit permissions for an approved user
+router.put('/edit-permissions/:id', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { permissions } = req.body;
 
+        const user = await User.findById(req.params.id);
+        if (!user || user.status !== 'active') {
+            return res.status(404).json({ error: 'Approved user not found' });
+        }
 
+        user.permissions = permissions || [];
+        await user.save();
 
+        res.json({ message: 'Permissions updated successfully' });
+    } catch (err) {
+        console.error('Edit permissions error:', err);
+        res.status(500).json({ error: 'Server error updating permissions' });
+    }
+});
 
 module.exports = router;
