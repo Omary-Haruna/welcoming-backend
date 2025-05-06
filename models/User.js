@@ -1,7 +1,7 @@
-const { Schema, model } = require('mongoose');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new Schema({
+const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -13,7 +13,7 @@ const userSchema = new Schema({
     status: {
         type: String,
         enum: ['pending', 'active'],
-        default: 'pending', // 👈 All users start as pending
+        default: 'pending',
     },
     permissions: {
         type: [String],
@@ -33,4 +33,4 @@ userSchema.methods.correctPassword = function (plain) {
     return bcrypt.compare(plain, this.password);
 };
 
-module.exports = model('User', userSchema);
+module.exports = mongoose.model('User', userSchema);

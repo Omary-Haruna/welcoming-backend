@@ -1,3 +1,6 @@
+
+console.log('✅ admin.js loaded');
+
 // Load environment variables from .env
 require('dotenv').config();
 
