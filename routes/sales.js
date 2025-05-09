@@ -2,12 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Sale = require('../models/Sale');
 
-// ✅ Add a new sale (now includes biller)
+// ✅ Add a new sale (includes biller and buyingPrice)
 router.post('/add', async (req, res) => {
     const { soldAt, subtotal, total, items, biller } = req.body;
 
     if (!biller) {
         return res.status(400).json({ success: false, message: 'Biller is required.' });
+    }
+
+    if (!items.every(item => 'buyingPrice' in item)) {
+        return res.status(400).json({ success: false, message: 'Each item must include a buyingPrice.' });
     }
 
     try {
@@ -53,6 +57,7 @@ router.get('/summary', async (req, res) => {
         const productCount = {};
         const customerCount = {};
         const dateCount = {};
+        let totalProfit = 0;
 
         sales.forEach(sale => {
             const date = new Date(sale.soldAt).toLocaleDateString();
@@ -60,11 +65,16 @@ router.get('/summary', async (req, res) => {
 
             sale.items.forEach(item => {
                 productCount[item.name] = (productCount[item.name] || 0) + item.quantity;
+
+                const profit = (item.price - item.buyingPrice) * item.quantity;
+                totalProfit += profit;
             });
 
-            if (sale.customerName) {
-                customerCount[sale.customerName] = (customerCount[sale.customerName] || 0) + 1;
-            }
+            sale.items.forEach(item => {
+                if (item.customerName) {
+                    customerCount[item.customerName] = (customerCount[item.customerName] || 0) + 1;
+                }
+            });
         });
 
         const topProduct = Object.entries(productCount).sort((a, b) => b[1] - a[1])[0];
@@ -78,6 +88,7 @@ router.get('/summary', async (req, res) => {
                 mostSoldItem: topProduct?.[0] || 'N/A',
                 topSellingDate: topDate?.[0] || 'N/A',
                 topCustomer: topCustomer?.[0] || 'N/A',
+                totalProfit: totalProfit.toFixed(2)
             },
         });
     } catch (err) {

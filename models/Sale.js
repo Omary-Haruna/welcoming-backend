@@ -20,7 +20,8 @@ const SaleSchema = new mongoose.Schema({
     items: [
         {
             name: { type: String, required: true },
-            price: { type: Number, required: true },         // unit price
+            price: { type: Number, required: true },         // selling price per item
+            buyingPrice: { type: Number, required: true },   // cost price per item
             quantity: { type: Number, required: true },
             total: { type: Number, required: true },          // price * quantity
             customerName: { type: String, default: '' },
