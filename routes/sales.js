@@ -2,12 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Sale = require('../models/Sale');
 
-// ✅ Add a new sale (no quantity reduction here anymore)
+// ✅ Add a new sale (now includes biller)
 router.post('/add', async (req, res) => {
-    const { soldAt, subtotal, total, items } = req.body;
+    const { soldAt, subtotal, total, items, biller } = req.body;
+
+    if (!biller) {
+        return res.status(400).json({ success: false, message: 'Biller is required.' });
+    }
 
     try {
-        const newSale = new Sale({ soldAt, subtotal, total, items });
+        const newSale = new Sale({ soldAt, subtotal, total, items, biller });
         await newSale.save();
 
         res.json({ success: true });
@@ -17,7 +21,7 @@ router.post('/add', async (req, res) => {
     }
 });
 
-// ✅ Get all sales (for SalesSummary)
+// ✅ Get all sales
 router.get('/all', async (req, res) => {
     try {
         const sales = await Sale.find().sort({ soldAt: -1 });
@@ -39,6 +43,7 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// 📊 Summary route
 router.get('/summary', async (req, res) => {
     try {
         const sales = await Sale.find();
@@ -79,6 +84,5 @@ router.get('/summary', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
-
 
 module.exports = router;
