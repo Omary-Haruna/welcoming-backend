@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const PendingCart = require('../models/PendingCart');
 
-// ✅ Save cart (merge with existing)
+// ✅ Save cart (append with unique cartId entries)
 router.post('/save', async (req, res) => {
     const { cart } = req.body;
 
@@ -16,25 +16,17 @@ router.post('/save', async (req, res) => {
         if (!existing) {
             existing = new PendingCart({ cart });
         } else {
-            const mergedCart = [...existing.cart];
+            // ✅ Avoid duplicates by checking cartId
+            const newCart = [...existing.cart];
 
             cart.forEach(newItem => {
-                const index = mergedCart.findIndex(item =>
-                    item.id === newItem.id &&
-                    item.customerPhone === newItem.customerPhone &&
-                    item.paymentMethod === newItem.paymentMethod
-                );
-
-                if (index !== -1) {
-                    // Merge by increasing quantity & total
-                    mergedCart[index].quantity += newItem.quantity;
-                    mergedCart[index].total += newItem.total;
-                } else {
-                    mergedCart.push(newItem);
+                const exists = newCart.some(item => item.cartId === newItem.cartId);
+                if (!exists) {
+                    newCart.push(newItem);
                 }
             });
 
-            existing.cart = mergedCart;
+            existing.cart = newCart;
             existing.updatedAt = new Date();
         }
 

@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const CartItemSchema = new mongoose.Schema({
+    cartId: {
+        type: String,
+        required: true,
+    },
     id: {
         type: String,
         required: true,
@@ -46,11 +50,7 @@ const PendingCartSchema = new mongoose.Schema({
     cart: {
         type: [CartItemSchema],
         default: [],
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now,
     }
-});
+}, { timestamps: true }); // ✅ createdAt, updatedAt
 
 module.exports = mongoose.model('PendingCart', PendingCartSchema);
