@@ -13,7 +13,11 @@ const mongoose = require('mongoose');
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: 'https://www.welcomingtechnology.com',
+    credentials: true
+}));
+
 app.use(express.json());
 
 // Route files
