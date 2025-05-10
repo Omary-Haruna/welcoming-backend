@@ -16,13 +16,17 @@ router.post('/save', async (req, res) => {
         if (!existing) {
             existing = new PendingCart({ cart });
         } else {
-            // Merge new cart items with existing ones (by id)
             const mergedCart = [...existing.cart];
 
             cart.forEach(newItem => {
-                const index = mergedCart.findIndex(item => item.id === newItem.id);
+                const index = mergedCart.findIndex(item =>
+                    item.id === newItem.id &&
+                    item.customerPhone === newItem.customerPhone &&
+                    item.paymentMethod === newItem.paymentMethod
+                );
+
                 if (index !== -1) {
-                    // If exists, update quantity and total
+                    // Merge by increasing quantity & total
                     mergedCart[index].quantity += newItem.quantity;
                     mergedCart[index].total += newItem.total;
                 } else {
@@ -35,10 +39,10 @@ router.post('/save', async (req, res) => {
         }
 
         await existing.save();
-        res.json({ success: true });
+        res.json({ success: true, message: 'Cart saved successfully' });
     } catch (err) {
         console.error('❌ Error saving pending cart:', err.message);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Failed to save cart' });
     }
 });
 
@@ -48,16 +52,18 @@ router.get('/', async (req, res) => {
         const data = await PendingCart.findOne();
         res.json({ success: true, cart: data?.cart || [] });
     } catch (err) {
+        console.error('❌ Error loading cart:', err.message);
         res.status(500).json({ success: false, message: 'Failed to load pending cart' });
     }
 });
 
-// ✅ Clear cart
+// ✅ Clear all pending carts
 router.delete('/clear', async (req, res) => {
     try {
         await PendingCart.deleteMany();
-        res.json({ success: true });
+        res.json({ success: true, message: 'Pending cart cleared successfully' });
     } catch (err) {
+        console.error('❌ Error clearing cart:', err.message);
         res.status(500).json({ success: false, message: 'Failed to clear pending cart' });
     }
 });
