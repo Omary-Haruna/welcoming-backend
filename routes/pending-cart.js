@@ -2,55 +2,63 @@ const express = require('express');
 const router = express.Router();
 const PendingCart = require('../models/PendingCart');
 
-// ✅ Get all pending carts (for admin view)
-router.get('/all', async (req, res) => {
-    try {
-        const carts = await PendingCart.find();
-        res.json({ success: true, carts });
-    } catch (error) {
-        res.status(500).json({ success: false, error: 'Failed to fetch carts' });
-    }
-});
-
-// ✅ Get current cart (for SalesCart use)
-router.get('/', async (req, res) => {
-    try {
-        const carts = await PendingCart.find();
-        res.json({ success: true, carts }); // 🔁 always use 'carts'
-    } catch (error) {
-        res.status(500).json({ success: false });
-    }
-});
-
-// ✅ Save or update entire pending cart
+// ✅ Save cart (merge with existing)
 router.post('/save', async (req, res) => {
-    try {
-        await PendingCart.deleteMany({});
-        await PendingCart.insertMany(req.body.cart);
-        res.json({ success: true });
-    } catch (error) {
-        console.error("Error saving pending cart:", error);
-        res.status(500).json({ success: false });
-    }
-});
+    const { cart } = req.body;
 
-// ✅ Clear entire pending cart
-router.delete('/clear', async (req, res) => {
-    try {
-        await PendingCart.deleteMany({});
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ success: false });
+    if (!Array.isArray(cart) || cart.length === 0) {
+        return res.status(400).json({ success: false, message: 'Cart is empty or invalid.' });
     }
-});
 
-// ✅ Delete single item from pending cart
-router.delete('/item/:id', async (req, res) => {
     try {
-        await PendingCart.findByIdAndDelete(req.params.id);
+        let existing = await PendingCart.findOne();
+
+        if (!existing) {
+            existing = new PendingCart({ cart });
+        } else {
+            // Merge new cart items with existing ones (by id)
+            const mergedCart = [...existing.cart];
+
+            cart.forEach(newItem => {
+                const index = mergedCart.findIndex(item => item.id === newItem.id);
+                if (index !== -1) {
+                    // If exists, update quantity and total
+                    mergedCart[index].quantity += newItem.quantity;
+                    mergedCart[index].total += newItem.total;
+                } else {
+                    mergedCart.push(newItem);
+                }
+            });
+
+            existing.cart = mergedCart;
+            existing.updatedAt = new Date();
+        }
+
+        await existing.save();
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ success: false });
+        console.error('❌ Error saving pending cart:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// ✅ Load existing pending cart
+router.get('/', async (req, res) => {
+    try {
+        const data = await PendingCart.findOne();
+        res.json({ success: true, cart: data?.cart || [] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to load pending cart' });
+    }
+});
+
+// ✅ Clear cart
+router.delete('/clear', async (req, res) => {
+    try {
+        await PendingCart.deleteMany();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to clear pending cart' });
     }
 });
 

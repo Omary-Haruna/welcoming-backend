@@ -1,12 +1,20 @@
-// models/PendingCart.js
 const mongoose = require('mongoose');
 
-const PendingCartItemSchema = new mongoose.Schema({
+const CartItemSchema = new mongoose.Schema({
+    id: String,
     name: String,
     image: String,
     price: Number,
     quantity: Number,
     total: Number,
+    customerName: String,
+    customerPhone: String,
+    paymentMethod: String
 });
 
-module.exports = mongoose.model('PendingCart', PendingCartItemSchema);
+const PendingCartSchema = new mongoose.Schema({
+    cart: [CartItemSchema],
+    updatedAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('PendingCart', PendingCartSchema);
