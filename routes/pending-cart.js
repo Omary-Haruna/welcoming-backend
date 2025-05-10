@@ -10,23 +10,23 @@ router.post('/save', async (req, res) => {
         return res.status(400).json({ success: false, message: 'Cart is empty or invalid.' });
     }
 
+    // ✅ Check each item has required fields
+    for (const [index, item] of cart.entries()) {
+        if (!item.cartId) {
+            return res.status(400).json({ success: false, message: `Missing cartId in item ${index}` });
+        }
+        if (!item.id || !item.name || typeof item.price !== 'number' || typeof item.quantity !== 'number') {
+            return res.status(400).json({ success: false, message: `Invalid data in item ${index}` });
+        }
+    }
+
     try {
         let existing = await PendingCart.findOne();
 
         if (!existing) {
             existing = new PendingCart({ cart });
         } else {
-            // ✅ Avoid duplicates by checking cartId
-            const newCart = [...existing.cart];
-
-            cart.forEach(newItem => {
-                const exists = newCart.some(item => item.cartId === newItem.cartId);
-                if (!exists) {
-                    newCart.push(newItem);
-                }
-            });
-
-            existing.cart = newCart;
+            existing.cart = cart;
             existing.updatedAt = new Date();
         }
 
@@ -37,6 +37,7 @@ router.post('/save', async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to save cart' });
     }
 });
+
 
 // ✅ Load existing pending cart
 router.get('/', async (req, res) => {
