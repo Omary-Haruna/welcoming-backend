@@ -93,4 +93,26 @@ router.post('/reduce-quantity', async (req, res) => {
     }
 });
 
+// 🔍 Get quantity of a product by ID
+router.get('/quantity/:id', async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id).select('name quantity');
+
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            productId: product._id,
+            name: product.name,
+            quantity: product.quantity
+        });
+    } catch (error) {
+        console.error('Error fetching quantity:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
+
 module.exports = router;
