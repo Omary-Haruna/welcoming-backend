@@ -97,6 +97,7 @@ router.get('/summary', async (req, res) => {
 });
 
 // 📋 Get unique customers from sales
+// 📋 Get unique customers from sales
 router.get('/customers', async (req, res) => {
     try {
         const sales = await Sale.find();
@@ -111,7 +112,7 @@ router.get('/customers', async (req, res) => {
                         customersMap.set(key, {
                             name: item.customerName,
                             phone: item.customerPhone,
-                            region: item.customerRegion || 'Unknown',
+                            region: item.region || 'Unknown',  // ✅ Correct field
                         });
                     }
                 }
@@ -125,6 +126,7 @@ router.get('/customers', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 
 module.exports = router;

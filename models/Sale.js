@@ -26,7 +26,8 @@ const SaleSchema = new mongoose.Schema({
             total: { type: Number, required: true },          // price * quantity
             customerName: { type: String, default: '' },
             customerPhone: { type: String, default: '' },
-            paymentMethod: { type: String, default: 'Cash' }  // Cash, Bank, Mobile
+            paymentMethod: { type: String, default: 'Cash' },
+            region: { type: String, default: '' }
         }
     ]
 });
