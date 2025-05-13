@@ -96,4 +96,35 @@ router.get('/summary', async (req, res) => {
     }
 });
 
+// 📋 Get unique customers from sales
+router.get('/customers', async (req, res) => {
+    try {
+        const sales = await Sale.find();
+
+        const customersMap = new Map();
+
+        sales.forEach(sale => {
+            sale.items.forEach(item => {
+                if (item.customerName && item.customerPhone) {
+                    const key = `${item.customerName}-${item.customerPhone}`;
+                    if (!customersMap.has(key)) {
+                        customersMap.set(key, {
+                            name: item.customerName,
+                            phone: item.customerPhone,
+                            region: item.customerRegion || 'Unknown',
+                        });
+                    }
+                }
+            });
+        });
+
+        const customers = Array.from(customersMap.values());
+        res.json({ success: true, customers });
+    } catch (err) {
+        console.error('❌ /api/sales/customers error:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+
 module.exports = router;
