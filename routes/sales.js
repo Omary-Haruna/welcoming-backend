@@ -97,10 +97,9 @@ router.get('/summary', async (req, res) => {
 });
 
 // 📋 Get unique customers from sales
-// 📋 Get unique customers from sales
 router.get('/customers', async (req, res) => {
     try {
-        const sales = await Sale.find();
+        const sales = await Sale.find().sort({ soldAt: 1 }); // Oldest first
 
         const customersMap = new Map();
 
@@ -108,24 +107,49 @@ router.get('/customers', async (req, res) => {
             sale.items.forEach(item => {
                 if (item.customerName && item.customerPhone) {
                     const key = `${item.customerName}-${item.customerPhone}`;
-                    if (!customersMap.has(key)) {
+                    const existing = customersMap.get(key);
+
+                    const itemTotal = item.price * item.quantity;
+
+                    if (!existing) {
                         customersMap.set(key, {
                             name: item.customerName,
                             phone: item.customerPhone,
-                            region: item.region || 'Unknown',  // ✅ Correct field
+                            region: item.region || 'Unknown',
+                            productBought: [item.name],
+                            totalSpent: itemTotal,
+                            totalQuantity: item.quantity,
+                            joinedDate: sale.soldAt,
+                            count: 1,
                         });
+                    } else {
+                        existing.productBought.push(item.name);
+                        existing.totalSpent += itemTotal;
+                        existing.totalQuantity += item.quantity;
+                        existing.count += 1;
                     }
                 }
             });
         });
 
-        const customers = Array.from(customersMap.values());
+        const customers = Array.from(customersMap.values()).map((c, index) => ({
+            id: index.toString(),
+            name: c.name,
+            phone: c.phone,
+            region: c.region,
+            productBought: c.productBought[c.productBought.length - 1], // most recent product
+            price: Math.floor(c.totalSpent / c.totalQuantity), // average price
+            joinedDate: new Date(c.joinedDate).toISOString().split('T')[0],
+            returning: c.count > 1
+        }));
+
         res.json({ success: true, customers });
     } catch (err) {
         console.error('❌ /api/sales/customers error:', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 
 
