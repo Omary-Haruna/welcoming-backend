@@ -175,8 +175,11 @@ router.get('/purchase-behavior', async (req, res) => {
             totalSpend += sale.total;
 
             sale.items.forEach(item => {
+                const productName = item.name?.trim();
+                if (!productName) return;
+
                 // Count products
-                productCount[item.name] = (productCount[item.name] || 0) + item.quantity;
+                productCount[productName] = (productCount[productName] || 0) + item.quantity;
 
                 // Count payment methods
                 const method = item.paymentMethod || 'Unknown';
@@ -198,7 +201,7 @@ router.get('/purchase-behavior', async (req, res) => {
         const commonProducts = Object.entries(productCount)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
-            .map(([name]) => name);
+            .map(([name, count]) => ({ name, count }));
 
         // Repeat vs one-time
         let repeatBuyers = 0;
