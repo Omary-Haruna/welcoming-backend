@@ -112,7 +112,8 @@ router.get('/customers', async (req, res) => {
                     const key = `${item.customerName}-${item.customerPhone}`;
                     const productEntry = {
                         name: item.name,
-                        price: item.price
+                        price: item.price,
+                        paymentMethod: item.paymentMethod || 'Unknown'
                     };
 
                     const existing = customersMap.get(key);
@@ -123,14 +124,13 @@ router.get('/customers', async (req, res) => {
                             phone: item.customerPhone,
                             region: item.region || 'Unknown',
                             products: [productEntry],
-                            purchaseDates: new Set([dateOnly]), // ✅ track first purchase date
+                            purchaseDates: new Set([dateOnly]),
                             lastDate: sale.soldAt
                         });
                     } else {
                         existing.products.push(productEntry);
-                        existing.purchaseDates.add(dateOnly); // ✅ add another day if different
+                        existing.purchaseDates.add(dateOnly);
 
-                        // update lastDate if newer
                         if (new Date(sale.soldAt) > new Date(existing.lastDate)) {
                             existing.lastDate = sale.soldAt;
                         }
@@ -139,16 +139,18 @@ router.get('/customers', async (req, res) => {
             });
         });
 
-        // ✅ Now prepare final customer list
-        const customers = Array.from(customersMap.values()).map((c, index) => ({
-            id: index.toString(),
-            name: c.name,
-            phone: c.phone,
-            region: c.region,
-            products: c.products, // e.g. [{ name: 'Mouse', price: 8000 }]
-            joinedDate: new Date(c.lastDate).toISOString().split('T')[0],
-            returning: c.purchaseDates.size > 1 // ✅ true if bought on 2+ different days
-        }));
+        const customers = Array.from(customersMap.values()).map((c, index) => {
+            const purchaseDatesArray = Array.from(c.purchaseDates);
+            return {
+                id: index.toString(),
+                name: c.name,
+                phone: c.phone,
+                region: c.region,
+                products: c.products,
+                joinedDate: new Date(c.lastDate).toISOString().split('T')[0],
+                returning: purchaseDatesArray.length > 1
+            };
+        });
 
         res.json({ success: true, customers });
 
@@ -157,6 +159,7 @@ router.get('/customers', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 // 📊 Real purchase behavior summary
 router.get('/purchase-behavior', async (req, res) => {
