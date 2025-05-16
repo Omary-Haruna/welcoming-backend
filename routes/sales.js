@@ -96,7 +96,7 @@ router.get('/summary', async (req, res) => {
     }
 });
 
-// 📋 Get unique customers from sales
+
 // 📋 Get unique customers from sales
 router.get('/customers', async (req, res) => {
     try {
@@ -115,27 +115,29 @@ router.get('/customers', async (req, res) => {
                         price: item.price
                     };
 
+                    const dateOnly = new Date(sale.soldAt).toISOString().split('T')[0]; // yyyy-mm-dd only
+
                     if (!existing) {
                         customersMap.set(key, {
                             name: item.customerName,
                             phone: item.customerPhone,
                             region: item.region || 'Unknown',
                             products: [productEntry],
-                            lastDate: sale.soldAt,
-                            count: 1,
+                            purchaseDates: new Set([dateOnly]), // ✅ track date as Set
+                            lastDate: sale.soldAt
                         });
                     } else {
                         existing.products.push(productEntry);
+                        existing.purchaseDates.add(dateOnly); // ✅ add unique date
 
                         if (new Date(sale.soldAt) > new Date(existing.lastDate)) {
                             existing.lastDate = sale.soldAt;
                         }
-
-                        existing.count += 1;
                     }
                 }
             });
         });
+        ;
 
         const customers = Array.from(customersMap.values()).map((c, index) => ({
             id: index.toString(),
@@ -153,7 +155,6 @@ router.get('/customers', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
-
 
 
 
