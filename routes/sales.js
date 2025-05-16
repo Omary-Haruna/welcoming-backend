@@ -97,53 +97,64 @@ router.get('/summary', async (req, res) => {
 });
 
 // 📋 Get unique customers from sales
+// 📋 Get unique customers from sales
 router.get('/customers', async (req, res) => {
     try {
-        const sales = await Sale.find().sort({ soldAt: 1 }); // Oldest first
+        const sales = await Sale.find().sort({ soldAt: 1 }); // Oldest to newest
 
         const customersMap = new Map();
 
+        // 🔁 Loop through all sales
         sales.forEach(sale => {
             sale.items.forEach(item => {
                 if (item.customerName && item.customerPhone) {
                     const key = `${item.customerName}-${item.customerPhone}`;
-                    const existing = customersMap.get(key);
-
                     const itemTotal = item.price * item.quantity;
 
+                    const existing = customersMap.get(key);
+
+                    // 🆕 First time we see this customer
                     if (!existing) {
                         customersMap.set(key, {
                             name: item.customerName,
                             phone: item.customerPhone,
                             region: item.region || 'Unknown',
-                            productBought: [item.name],
-                            totalSpent: itemTotal,
-                            totalQuantity: item.quantity,
-                            joinedDate: sale.soldAt,
-                            count: 1,
+
+                            // ✅ Track most recent sale details
+                            lastProduct: item.name,
+                            lastPrice: item.price,
+                            lastDate: sale.soldAt,
+
+                            count: 1, // purchases count
                         });
                     } else {
-                        existing.productBought.push(item.name);
-                        existing.totalSpent += itemTotal;
-                        existing.totalQuantity += item.quantity;
+                        // ✅ Check if this is a newer sale, and update
+                        if (new Date(sale.soldAt) > new Date(existing.lastDate)) {
+                            existing.lastProduct = item.name;
+                            existing.lastPrice = item.price;
+                            existing.lastDate = sale.soldAt;
+                        }
+
                         existing.count += 1;
                     }
                 }
             });
         });
 
+        // ✅ Final customer list sent to frontend
         const customers = Array.from(customersMap.values()).map((c, index) => ({
             id: index.toString(),
             name: c.name,
             phone: c.phone,
             region: c.region,
-            productBought: c.productBought[c.productBought.length - 1], // most recent product
-            price: Math.floor(c.totalSpent / c.totalQuantity), // average price
-            joinedDate: new Date(c.joinedDate).toISOString().split('T')[0],
+            productBought: c.lastProduct || '—',
+            price: c.lastPrice || 0,
+            joinedDate: new Date(c.lastDate).toISOString().split('T')[0],
             returning: c.count > 1
         }));
 
         res.json({ success: true, customers });
+
     } catch (err) {
         console.error('❌ /api/sales/customers error:', err.message);
         res.status(500).json({ success: false, message: err.message });
