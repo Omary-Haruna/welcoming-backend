@@ -27,7 +27,8 @@ const SaleSchema = new mongoose.Schema({
             customerName: { type: String, default: '' },
             customerPhone: { type: String, default: '' },
             paymentMethod: { type: String, default: 'Cash' },
-            region: { type: String, default: '' }
+            region: { type: String, default: '' },
+            district: { type: String, default: '' }
         }
     ]
 });
