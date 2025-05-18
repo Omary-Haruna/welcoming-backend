@@ -2,23 +2,45 @@ const express = require('express');
 const router = express.Router();
 const Sale = require('../models/Sale');
 
-// ✅ Add a new sale (includes biller and buyingPrice)
+// ✅ Add a new sale
 router.post('/add', async (req, res) => {
-    const { soldAt, subtotal, total, items, biller } = req.body;
+    const {
+        soldAt,
+        subtotal,
+        total,
+        items,
+        biller,
+        customerName,
+        customerPhone,
+        region,
+        district,
+        paymentMethod
+    } = req.body;
 
-    if (!biller) {
-        return res.status(400).json({ success: false, message: 'Biller is required.' });
+    if (!biller || !customerName || !customerPhone || !region || !district) {
+        return res.status(400).json({ success: false, message: 'Missing required customer or biller fields.' });
     }
 
-    if (!items.every(item => 'buyingPrice' in item)) {
+    if (!items || !items.length || !items.every(item => 'buyingPrice' in item)) {
         return res.status(400).json({ success: false, message: 'Each item must include a buyingPrice.' });
     }
 
     try {
-        const newSale = new Sale({ soldAt, subtotal, total, items, biller });
-        await newSale.save();
+        const newSale = new Sale({
+            soldAt,
+            subtotal,
+            total,
+            items,
+            biller,
+            customerName,
+            customerPhone,
+            region,
+            district,
+            paymentMethod
+        });
 
-        res.json({ success: true });
+        await newSale.save();
+        res.json({ success: true, sale: newSale });
     } catch (err) {
         console.error('❌ Sale Error:', err.message);
         res.status(500).json({ success: false, message: err.message });
@@ -51,7 +73,6 @@ router.delete('/:id', async (req, res) => {
 router.get('/summary', async (req, res) => {
     try {
         const sales = await Sale.find();
-
         if (!sales.length) return res.json({ success: true, summary: null });
 
         const productCount = {};
@@ -65,16 +86,12 @@ router.get('/summary', async (req, res) => {
 
             sale.items.forEach(item => {
                 productCount[item.name] = (productCount[item.name] || 0) + item.quantity;
-
-                const profit = (item.price - item.buyingPrice) * item.quantity;
-                totalProfit += profit;
+                totalProfit += (item.price - item.buyingPrice) * item.quantity;
             });
 
-            sale.items.forEach(item => {
-                if (item.customerName) {
-                    customerCount[item.customerName] = (customerCount[item.customerName] || 0) + 1;
-                }
-            });
+            if (sale.customerName) {
+                customerCount[sale.customerName] = (customerCount[sale.customerName] || 0) + 1;
+            }
         });
 
         const topProduct = Object.entries(productCount).sort((a, b) => b[1] - a[1])[0];
@@ -96,51 +113,44 @@ router.get('/summary', async (req, res) => {
     }
 });
 
-
 // 📋 Get unique customers from sales
 router.get('/customers', async (req, res) => {
     try {
-        const sales = await Sale.find().sort({ soldAt: 1 }); // get all sales sorted by date
-
+        const sales = await Sale.find().sort({ soldAt: 1 });
         const customersMap = new Map();
 
         sales.forEach(sale => {
-            const dateOnly = new Date(sale.soldAt).toISOString().split('T')[0]; // format: yyyy-mm-dd
+            const dateOnly = new Date(sale.soldAt).toISOString().split('T')[0];
+            if (sale.customerName && sale.customerPhone) {
+                const key = `${sale.customerName}-${sale.customerPhone}`;
+                const productEntry = sale.items.map(item => ({
+                    name: item.name,
+                    price: item.price,
+                    paymentMethod: sale.paymentMethod || 'Unknown'
+                }));
 
-            sale.items.forEach(item => {
-                if (item.customerName && item.customerPhone) {
-                    const key = `${item.customerName}-${item.customerPhone}`;
-                    const productEntry = {
-                        name: item.name,
-                        price: item.price,
-                        paymentMethod: item.paymentMethod || 'Unknown'
-                    };
+                const existing = customersMap.get(key);
 
-                    const existing = customersMap.get(key);
-
-                    if (!existing) {
-                        customersMap.set(key, {
-                            name: item.customerName,
-                            phone: item.customerPhone,
-                            region: item.region || 'Unknown',
-                            products: [productEntry],
-                            purchaseDates: new Set([dateOnly]),
-                            lastDate: sale.soldAt
-                        });
-                    } else {
-                        existing.products.push(productEntry);
-                        existing.purchaseDates.add(dateOnly);
-
-                        if (new Date(sale.soldAt) > new Date(existing.lastDate)) {
-                            existing.lastDate = sale.soldAt;
-                        }
+                if (!existing) {
+                    customersMap.set(key, {
+                        name: sale.customerName,
+                        phone: sale.customerPhone,
+                        region: sale.region || 'Unknown',
+                        products: productEntry,
+                        purchaseDates: new Set([dateOnly]),
+                        lastDate: sale.soldAt
+                    });
+                } else {
+                    existing.products.push(...productEntry);
+                    existing.purchaseDates.add(dateOnly);
+                    if (new Date(sale.soldAt) > new Date(existing.lastDate)) {
+                        existing.lastDate = sale.soldAt;
                     }
                 }
-            });
+            }
         });
 
         const customers = Array.from(customersMap.values()).map((c, index) => {
-            const purchaseDatesArray = Array.from(c.purchaseDates);
             return {
                 id: index.toString(),
                 name: c.name,
@@ -148,24 +158,21 @@ router.get('/customers', async (req, res) => {
                 region: c.region,
                 products: c.products,
                 joinedDate: new Date(c.lastDate).toISOString().split('T')[0],
-                returning: purchaseDatesArray.length > 1
+                returning: c.purchaseDates.size > 1
             };
         });
 
         res.json({ success: true, customers });
-
     } catch (err) {
         console.error('❌ /api/sales/customers error:', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-
-// 📊 Real purchase behavior summary
+// 📊 Purchase behavior route
 router.get('/purchase-behavior', async (req, res) => {
     try {
         const sales = await Sale.find();
-
         const productCount = {};
         const customerMap = new Map();
         const paymentMethods = {};
@@ -178,32 +185,27 @@ router.get('/purchase-behavior', async (req, res) => {
                 const productName = item.name?.trim();
                 if (!productName) return;
 
-                // Count products
                 productCount[productName] = (productCount[productName] || 0) + item.quantity;
-
-                // Count payment methods
-                const method = item.paymentMethod || 'Unknown';
-                paymentMethods[method] = (paymentMethods[method] || 0) + 1;
-
-                // Track repeat customers
-                const customerKey = `${item.customerName}-${item.customerPhone}`;
-                const date = new Date(sale.soldAt).toISOString().split('T')[0];
-
-                if (!customerMap.has(customerKey)) {
-                    customerMap.set(customerKey, new Set([date]));
-                } else {
-                    customerMap.get(customerKey).add(date);
-                }
             });
+
+            const method = sale.paymentMethod || 'Unknown';
+            paymentMethods[method] = (paymentMethods[method] || 0) + 1;
+
+            const customerKey = `${sale.customerName}-${sale.customerPhone}`;
+            const date = new Date(sale.soldAt).toISOString().split('T')[0];
+
+            if (!customerMap.has(customerKey)) {
+                customerMap.set(customerKey, new Set([date]));
+            } else {
+                customerMap.get(customerKey).add(date);
+            }
         });
 
-        // Top products
         const commonProducts = Object.entries(productCount)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
             .map(([name, count]) => ({ name, count }));
 
-        // Repeat vs one-time
         let repeatBuyers = 0;
         let oneTimeBuyers = 0;
 
@@ -215,7 +217,6 @@ router.get('/purchase-behavior', async (req, res) => {
         const totalCustomers = customerMap.size;
         const avgSpend = totalCustomers ? Math.floor(totalSpend / totalCustomers) : 0;
 
-        // Normalize payment methods
         const totalPayments = Object.values(paymentMethods).reduce((a, b) => a + b, 0);
         const paymentMethodPercents = {};
         for (const [method, count] of Object.entries(paymentMethods)) {
@@ -226,7 +227,7 @@ router.get('/purchase-behavior', async (req, res) => {
             success: true,
             data: {
                 commonProducts,
-                purchaseFrequency: 'Weekly', // Optional - can calculate based on dates
+                purchaseFrequency: 'Weekly',
                 avgSpend,
                 repeatBuyers,
                 oneTimeBuyers,
@@ -238,7 +239,5 @@ router.get('/purchase-behavior', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
-
-
 
 module.exports = router;

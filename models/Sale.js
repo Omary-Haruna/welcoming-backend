@@ -17,18 +17,33 @@ const SaleSchema = new mongoose.Schema({
         type: String,
         required: true  // username of the person who performed the sale
     },
+    paymentMethod: {
+        type: String,
+        default: 'Cash'
+    },
+    customerName: {
+        type: String,
+        required: true
+    },
+    customerPhone: {
+        type: String,
+        required: true
+    },
+    region: {
+        type: String,
+        required: true
+    },
+    district: {
+        type: String,
+        required: true
+    },
     items: [
         {
             name: { type: String, required: true },
             price: { type: Number, required: true },         // selling price per item
             buyingPrice: { type: Number, required: true },   // cost price per item
             quantity: { type: Number, required: true },
-            total: { type: Number, required: true },          // price * quantity
-            customerName: { type: String, default: '' },
-            customerPhone: { type: String, default: '' },
-            paymentMethod: { type: String, default: 'Cash' },
-            region: { type: String, default: '' },
-            district: { type: String, default: '' }
+            total: { type: Number, required: true }          // price * quantity
         }
     ]
 });
