@@ -4,16 +4,16 @@ const customerSchema = new mongoose.Schema(
     {
         name: {
             type: String,
-            required: true,
             trim: true,
+            default: '',
         },
         region: {
             type: String,
-            required: true,
+            default: '',
         },
         district: {
             type: String,
-            required: true,
+            default: '',
         },
         phone: {
             type: String,
@@ -23,7 +23,7 @@ const customerSchema = new mongoose.Schema(
         },
     },
     {
-        timestamps: true, // adds createdAt and updatedAt
+        timestamps: true,
     }
 );
 
