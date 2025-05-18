@@ -10,15 +10,15 @@ router.post('/add', async (req, res) => {
         total,
         items,
         biller,
-        customerName,
-        customerPhone,
-        region,
-        district,
-        paymentMethod
+        customerName = '',
+        customerPhone = '',
+        region = '',
+        district = '',
+        paymentMethod = 'Cash'
     } = req.body;
 
-    if (!biller || !customerName || !customerPhone || !region || !district) {
-        return res.status(400).json({ success: false, message: 'Missing required customer or biller fields.' });
+    if (!biller) {
+        return res.status(400).json({ success: false, message: 'Biller is required.' });
     }
 
     if (!items || !items.length || !items.every(item => 'buyingPrice' in item)) {
@@ -46,6 +46,7 @@ router.post('/add', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 // ✅ Get all sales
 router.get('/all', async (req, res) => {

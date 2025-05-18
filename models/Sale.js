@@ -15,7 +15,7 @@ const SaleSchema = new mongoose.Schema({
     },
     biller: {
         type: String,
-        required: true  // username of the person who performed the sale
+        required: true // username of the person who performed the sale
     },
     paymentMethod: {
         type: String,
@@ -23,19 +23,19 @@ const SaleSchema = new mongoose.Schema({
     },
     customerName: {
         type: String,
-        required: true
+        default: ''
     },
     customerPhone: {
         type: String,
-        required: true
+        default: ''
     },
     region: {
         type: String,
-        required: true
+        default: ''
     },
     district: {
         type: String,
-        required: true
+        default: ''
     },
     items: [
         {
