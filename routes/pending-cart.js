@@ -4,13 +4,12 @@ const PendingCart = require('../models/PendingCart');
 
 // ✅ Save cart (append with unique cartId entries)
 router.post('/save', async (req, res) => {
-    const { cart } = req.body;
+    const { cart, _id } = req.body;
 
     if (!Array.isArray(cart) || cart.length === 0) {
         return res.status(400).json({ success: false, message: 'Cart is empty or invalid.' });
     }
 
-    // ✅ Check each item has required fields
     for (const [index, item] of cart.entries()) {
         if (!item.cartId) {
             return res.status(400).json({ success: false, message: `Missing cartId in item ${index}` });
@@ -21,8 +20,14 @@ router.post('/save', async (req, res) => {
     }
 
     try {
-        let existing = await PendingCart.findOne();
+        let existing = null;
 
+        // ✅ Try finding by _id if provided
+        if (_id) {
+            existing = await PendingCart.findById(_id);
+        }
+
+        // ✅ Fall back to the first pending cart if no ID found
         if (!existing) {
             existing = new PendingCart({ cart });
         } else {
@@ -31,12 +36,13 @@ router.post('/save', async (req, res) => {
         }
 
         await existing.save();
-        res.json({ success: true, message: 'Cart saved successfully' });
+        res.json({ success: true, message: 'Cart saved successfully', _id: existing._id });
     } catch (err) {
         console.error('❌ Error saving pending cart:', err.message);
         res.status(500).json({ success: false, message: 'Failed to save cart' });
     }
 });
+
 
 
 // ✅ Load existing pending cart
