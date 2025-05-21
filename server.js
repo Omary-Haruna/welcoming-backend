@@ -27,17 +27,21 @@ const salesRoutes = require('./routes/sales');
 const pendingCartRoutes = require('./routes/pending-cart'); // ✅ pending cart route
 const adminRoutes = require('./routes/admin');
 const customerRoutes = require('./routes/customerRoutes'); // ✅ Add this
+const orderRoutes = require('./routes/orders');
+
 
 
 
 
 // Register routes
-app.use('/api/auth', authRoutes);               // /api/auth/register, /api/auth/login
-app.use('/api/products', productRoutes);        // /api/products/all
-app.use('/api/sales', salesRoutes);             // /api/sales/add, /api/sales/all
-app.use('/api/pending-cart', pendingCartRoutes); // ✅ pending-cart/save, /all, /clear
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/pending-cart', pendingCartRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/customers', customerRoutes); // ✅ Add this line
+app.use('/api/customers', customerRoutes);
+app.use('/api/orders', orderRoutes);
+
 
 
 
