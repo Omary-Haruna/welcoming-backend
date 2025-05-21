@@ -32,4 +32,15 @@ router.post("/create", async (req, res) => {
     }
 });
 
+router.get("/recent", async (req, res) => {
+    try {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentOrders = await Order.find({ orderDate: { $gte: yesterday } }).sort({ orderDate: -1 });
+
+        res.status(200).json({ success: true, orders: recentOrders });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Failed to fetch recent orders" });
+    }
+});
+
 module.exports = router;
