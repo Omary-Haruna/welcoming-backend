@@ -11,8 +11,14 @@ const OrderSchema = new mongoose.Schema({
     customerPhone: String,
     region: String,
     district: String,
-    expectedArrival: String, // 🆕 e.g., "2025-05-22 14:00"
-    parcelGivenTo: String,   // 🆕 person who picked up the parcel
+
+    fromRegion: String,        // ✅ where it's sent from
+    toRegion: String,          // ✅ where it's going
+    toDistrict: String,        // ✅ delivery district
+
+    expectedArrival: String,   // ✅ e.g. "2025-05-22 14:00"
+    parcelGivenTo: String,     // ✅ e.g. driver or handler
+    createdBy: String,         // ✅ e.g. "Omary" or "admin@yourshop.com"
 
     products: [
         {
@@ -25,13 +31,14 @@ const OrderSchema = new mongoose.Schema({
     ],
 
     totalAmount: { type: Number, required: true },
+
     orderStatus: {
         type: String,
         enum: ["Pending Pickup", "Picked Up", "Arrived", "Paid"],
         default: "Pending Pickup"
     },
 
-    orderDate: { type: Date, default: Date.now } // 💾 time order was created
+    orderDate: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Order", OrderSchema);

@@ -4,18 +4,25 @@ const Order = require("../models/Order");
 
 router.post("/create", async (req, res) => {
     try {
-        const { customer, cart } = req.body;
+        const { customer, cart, createdBy } = req.body;
 
-        const totalAmount = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+        const totalAmount = cart.reduce(
+            (sum, item) => sum + item.quantity * item.price,
+            0
+        );
 
         const newOrder = new Order({
             customerName: customer.name,
             customerPhone: customer.phone,
             region: customer.region,
             district: customer.district,
-            expectedArrival: customer.expectedArrival || "", // ✅ new field
-            parcelGivenTo: customer.parcelGivenTo || "",     // ✅ new field
-            orderStatus: "Pending Pickup",                   // ✅ optional — will default anyway
+            expectedArrival: customer.expectedArrival || "",
+            parcelGivenTo: customer.parcelGivenTo || "",
+            fromRegion: customer.fromRegion || "",
+            toRegion: customer.toRegion || "",
+            toDistrict: customer.toDistrict || "",
+            createdBy: createdBy || "Unknown",
+            orderStatus: "Pending Pickup",
 
             products: cart.map((item) => ({
                 productId: item._id,
@@ -36,7 +43,7 @@ router.post("/create", async (req, res) => {
     }
 });
 
-// ✅ Already correct for recent orders
+// ✅ Get orders from the past 24 hours
 router.get("/recent", async (req, res) => {
     try {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
