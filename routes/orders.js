@@ -55,14 +55,16 @@ router.get("/recent", async (req, res) => {
     }
 });
 
-router.put("/orders/:id", async (req, res) => {
+router.put("/:id", async (req, res) => {
     try {
         const updated = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.status(200).json({ success: true, order: updated });
     } catch (err) {
+        console.error("❌ Backend error:", err);
         res.status(500).json({ success: false, message: "Update failed" });
     }
 });
+
 
 
 module.exports = router;
